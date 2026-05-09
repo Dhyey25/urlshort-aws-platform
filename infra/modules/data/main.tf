@@ -1,3 +1,13 @@
+terraform {
+  required_version = ">= 1.9.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 locals {
   name_prefix = "${var.project}-${var.environment}"
 }
@@ -80,7 +90,13 @@ resource "aws_db_instance" "main" {
 
   performance_insights_enabled          = true
   performance_insights_retention_period = 7 # free tier
-  enabled_cloudwatch_logs_exports       = ["postgresql"]
+
+  # Add this line to encrypt the performance data
+  performance_insights_kms_key_id = "arn:aws:kms:us-east-1:825765386578:alias/aws/rds"
+
+  # Ensure storage is also encrypted to satisfy other security checks
+
+  enabled_cloudwatch_logs_exports = ["postgresql"]
 
   tags = {
     Name = "${local.name_prefix}-postgres"
