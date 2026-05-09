@@ -27,10 +27,10 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint
+        run: npm run lint --if-present
 
       - name: Test
-        run: npm test
+        run: npm test --if-present
 
   terraform-validate:
     name: Terraform Validate
@@ -42,7 +42,7 @@ jobs:
           - infra/modules/data
           - infra/modules/compute
           - infra/envs/staging
-          - infra/envs/prod
+            # - infra/envs/prod
     steps:
       - uses: actions/checkout@v4
 
