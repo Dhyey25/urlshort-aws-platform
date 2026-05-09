@@ -1,2 +1,50 @@
+# Version control
 .git
+.gitignore
+.gitattributes
+
+# Dependencies (will be installed in container)
 node_modules
+npm-debug.log
+yarn-error.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build artifacts that should be re-built
+dist
+build
+coverage
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+test/
+tests/
+__tests__/
+
+# Documentation that doesn't ship
+docs/
+README.md
+*.md
+!PORTFOLIO.md
+
+# CI / infra
+.github
+infra
+docker-compose*.yml
+Dockerfile.dev
+
+# Editor configs
+.editorconfig
+.eslintrc*
+.prettierrc*

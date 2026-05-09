@@ -21,7 +21,7 @@ function createViewsChartLabel(ctx) {
   }
 
   if (period === "month") {
-    const nowDay = new Date().getDate();  
+    const nowDay = new Date().getDate();
     for (let i = 29; i >= 0; --i) {
       const date = new Date(new Date().setDate(nowDay - i));
       labels.push(`${date.getDate()} ${date.toLocaleString("default",{month:"short"})}`);
@@ -29,7 +29,7 @@ function createViewsChartLabel(ctx) {
   }
 
   if (period === "year") {
-    const nowMonth = new Date().getMonth();  
+    const nowMonth = new Date().getMonth();
     for (let i = 11; i >= 0; --i) {
       const date = new Date(new Date().setMonth(nowMonth - i));
       labels.push(`${date.toLocaleString("default",{month:"short"})} ${date.toLocaleString("default",{year:"numeric"})}`);
@@ -79,14 +79,14 @@ function createViewsChart() {
   canvases.forEach(ctx => {
     const data = JSON.parse(ctx.dataset.data);
     const period = ctx.dataset.period;
-  
+
     const labels = createViewsChartLabel(ctx);
     const maxTicksLimitX = period === "year" ? 6 : period === "month" ? 15 : 12;
-  
+
     const gradient = ctx.getContext("2d").createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");   
+    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");
     gradient.addColorStop(1, "rgba(179, 157, 219, 0.05)");
-    
+
     new Chart(ctx, {
       type: "line",
       data: {
@@ -95,7 +95,7 @@ function createViewsChart() {
           label: "Views",
           data,
           tension: 0.3,
-  
+
           elements: {
             point: {
               pointRadius: 0,
@@ -147,7 +147,7 @@ function createViewsChart() {
               maxTicksLimit: maxTicksLimitX,
             }
           }
-        }  
+        }
       }
     });
 
@@ -167,9 +167,9 @@ function createBrowsersChart() {
 
     const gradient = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
     const gradientHover = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
-    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");   
+    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");
     gradient.addColorStop(1, "rgba(179, 157, 219, 0.05)");
-    gradientHover.addColorStop(0, "rgba(179, 157, 219, 0.9)");   
+    gradientHover.addColorStop(0, "rgba(179, 157, 219, 0.9)");
     gradientHover.addColorStop(1, "rgba(179, 157, 219, 0.4)");
 
     new Chart(ctx, {
@@ -219,7 +219,7 @@ function createBrowsersChart() {
               maxTicksLimit: 6,
             }
           }
-        }  
+        }
       }
     });
 
@@ -321,9 +321,9 @@ function createOsChart() {
 
     const gradient = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
     const gradientHover = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
-    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");   
+    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");
     gradient.addColorStop(1, "rgba(179, 157, 219, 0.05)");
-    gradientHover.addColorStop(0, "rgba(179, 157, 219, 0.9)");   
+    gradientHover.addColorStop(0, "rgba(179, 157, 219, 0.9)");
     gradientHover.addColorStop(1, "rgba(179, 157, 219, 0.4)");
 
     new Chart(ctx, {
@@ -373,7 +373,7 @@ function createOsChart() {
               maxTicksLimit: 6,
             }
           }
-        }  
+        }
       }
     });
 
@@ -394,14 +394,14 @@ function feedMapData(period) {
   let max = data.sort((a, b) => a.value > b.value ? -1 : 1)[0];
 
   if (!max) max = { value: 1 }
-  
+
   data = data.reduce((a, c) => ({ ...a, [c.name]: c.value }), {});
-  
+
   for (let i = 0; i < paths.length; ++i) {
     const id = paths[i].dataset.id;
     const views = data[id] || 0;
     paths[i].dataset.views = views;
-    const colorLevel = Math.ceil((views / max.value) * 6);  
+    const colorLevel = Math.ceil((views / max.value) * 6);
     const classList = paths[i].classList;
     for (let j = 1; j < 7; j++) {
       paths[i].classList.remove(`color-${j}`);

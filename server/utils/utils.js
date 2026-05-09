@@ -99,7 +99,7 @@ function statsObjectToArray(obj) {
         value: obj[key][name]
       }))
       .sort((a, b) => b.value - a.value);
-  
+
   return {
     browser: objToArr("browser"),
     os: objToArr("os"),
@@ -135,12 +135,12 @@ function dateToUTC(date) {
   if (knex.isSQLite) {
     return dateUTC.substring(0, 10) + " " + dateUTC.substring(11, 19);
   }
-  
+
   // mysql doesn't save time in utc, so format the date in local timezone instead
   if (knex.isMySQL) {
     return format(new Date(date), "yyyy-MM-dd HH:mm:ss");
   }
-  
+
   // return unformatted utc string for postgres
   return dateUTC;
 }
@@ -360,7 +360,7 @@ function registerHandlebarsHelpers() {
   hbs.registerHelper("json", function(context) {
     return JSON.stringify(context);
   });
-  
+
   const blocks = {};
 
   hbs.registerHelper("extend", function(name, context) {

@@ -350,7 +350,7 @@ const createUser = [
     .isEmail()
     .custom(async (value, { req }) => {
       const user = await query.user.find({ email: value });
-      if (user) 
+      if (user)
         return Promise.reject();
     })
     .withMessage("User already exists."),
@@ -552,7 +552,7 @@ module.exports = {
   deleteUserByAdmin,
   editLink,
   getStats,
-  login, 
+  login,
   newPassword,
   redirectProtected,
   removeDomain,

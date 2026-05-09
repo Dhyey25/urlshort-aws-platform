@@ -99,7 +99,7 @@ hr {
 span.bold { font-weight: bold; }
 span.underline { border-bottom: 2px dotted #999; }
 
-.space-between { 
+.space-between {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -592,7 +592,7 @@ label input {
   margin-top: 0.5rem;
 }
 
-label.checkbox { 
+label.checkbox {
   flex-direction: row;
   align-items: center;
   cursor: pointer;
@@ -710,8 +710,8 @@ table select {
   margin-right: 1rem;
 }
 
-table .tab { 
-  display: flex; 
+table .tab {
+  display: flex;
   align-items: center;
 }
 
@@ -1048,10 +1048,10 @@ form#login-signup a.forgot-password {
 }
 
 form#login-signup svg.spinner {  display: none; }
-form#login-signup.htmx-request:not(.signup) .login svg { display: none; } 
-form#login-signup.htmx-request:not(.signup) .login svg.spinner { display: block; } 
-form#login-signup.htmx-request.signup .signup svg { display: none; } 
-form#login-signup.htmx-request.signup .signup svg.spinner { display: block; } 
+form#login-signup.htmx-request:not(.signup) .login svg { display: none; }
+form#login-signup.htmx-request:not(.signup) .login svg.spinner { display: block; }
+form#login-signup.htmx-request.signup .signup svg { display: none; }
+form#login-signup.htmx-request.signup .signup svg.spinner { display: block; }
 form#login-signup.htmx-request .error { opacity: 0; }
 
 form#login-signup p.error {
@@ -1444,8 +1444,8 @@ main form label#advanced input {
 #main-table-wrapper.admin-table-wrapper table td.short-link,
 #main-table-wrapper table td.users-email,
 #main-table-wrapper table td.domains-address,
-#main-table-wrapper table td.users-created-at, 
-#main-table-wrapper table td.users-verified { 
+#main-table-wrapper table td.users-created-at,
+#main-table-wrapper table td.users-verified {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
@@ -1490,7 +1490,7 @@ table .short-link-wrapper { display: flex; align-items: center; }
 #main-table-wrapper table .status.red { background-color: hsl(0, 100%, 96.7%); }
 
 #main-table-wrapper table tr.no-data {
-  flex: 1 1 auto; 
+  flex: 1 1 auto;
   justify-content: center;
   animation: fadein 0.3s ease-in-out;
 }
@@ -1587,7 +1587,7 @@ table .short-link-wrapper { display: flex; align-items: center; }
   background-color: #fafafa;
 }
 
-#main-table-wrapper table tr.edit td { 
+#main-table-wrapper table tr.edit td {
   width: 100%;
   padding: 2rem 1.5rem;
   flex-basis: auto;
@@ -1760,10 +1760,10 @@ h1.settings-welcome span {
   margin: 1.5rem 0 2rem;
 }
 
-.add-domain-wrapper > .spinner { 
-  width: 20px; 
-  display: none; 
-  margin: 1rem 0 0 1rem; 
+.add-domain-wrapper > .spinner {
+  width: 20px;
+  display: none;
+  margin: 1rem 0 0 1rem;
 }
 .add-domain-wrapper.htmx-request > button { display: none; }
 .add-domain-wrapper.htmx-request > .spinner { display: block; }
@@ -1841,12 +1841,12 @@ form#delete-account.htmx-request .spinner { display: block; }
   padding: 0 16px;
 }
 
-.loading-stats { 
+.loading-stats {
   width: 100%;
   flex: 1 1 0;
   margin-top: -5rem;
-  display: flex; 
-  align-items: center; 
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
 .loading-stats .spinner {
@@ -1995,7 +1995,7 @@ svg.map path.active { stroke: hsl(261, 46%, 50%); stroke-width: 1.5; }
   align-items: center;
 }
 
-#notfound h2 { 
+#notfound h2 {
   font-size: 28px;
   font-weight: 300;
   text-align: center;
@@ -2017,7 +2017,7 @@ svg.map path.active { stroke: hsl(261, 46%, 50%); stroke-width: 1.5; }
   margin-top: 2rem;
 }
 
-#report form .inputs-wrapper { 
+#report form .inputs-wrapper {
   display: flex;
   align-items: flex-end;
 }
@@ -2041,7 +2041,7 @@ svg.map path.active { stroke: hsl(261, 46%, 50%); stroke-width: 1.5; }
   flex-direction: column;
 }
 
-#reset-password form .inputs-wrapper { 
+#reset-password form .inputs-wrapper {
   display: flex;
   align-items: flex-end;
   margin-top: 2rem;
@@ -2092,14 +2092,14 @@ svg.map path.active { stroke: hsl(261, 46%, 50%); stroke-width: 1.5; }
 }
 
 .verify-page h2,
-.verify-page h3 { 
+.verify-page h3 {
   display: flex;
   align-items: center;
   text-align: center;
   font-weight: normal;
 }
 
-.verify-page h2 svg, 
+.verify-page h2 svg,
 .verify-page h3 svg {
   width: 1.15em;
   height: auto;
@@ -2145,7 +2145,7 @@ svg.map path.active { stroke: hsl(261, 46%, 50%); stroke-width: 1.5; }
 
 @media only screen and (max-width: 768px) {
   html, body { font-size: 14px; }
-  
+
   input[type="text"],
   input[type="email"],
   input[type="password"],
@@ -2162,13 +2162,13 @@ svg.map path.active { stroke: hsl(261, 46%, 50%); stroke-width: 1.5; }
   input[type="text"]::placeholder,
   input[type="email"]::placeholder,
   input[type="password"]::placeholder { font-size: 13px; letter-spacing: 0.04em; }
-  
-  table tr { padding: 0 0.25rem; } 
+
+  table tr { padding: 0 0.25rem; }
   table th,
   table td { padding: 0.5rem; }
   table td { font-size: 14px; }
   table tr.loading-placeholder td { font-size: 16px; }
-  
+
   a.button,
   button { height: 32px; padding: 0 22px; font-size: 12px; }
   a.button.action,
@@ -2306,11 +2306,11 @@ svg.map path.active { stroke: hsl(261, 46%, 50%); stroke-width: 1.5; }
 
 @media only screen and (max-width: 640px) {
   table tr.loading-placeholder { justify-content: flex-start; }
-  
+
   .inputs { flex-direction: column; margin-bottom: 0.75rem; }
   .inputs label { margin: 0 0 0.75rem; }
   .inputs label:last-child { margin: 0; }
-  
+
   .advanced-input-wrapper { flex-direction: column; margin-bottom: 0; }
   .advanced-input-wrapper label { width: 100%; margin-bottom: 0.75rem; padding-right: 0; }
   .advanced-input-wrapper label input,

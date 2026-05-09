@@ -1,7 +1,10 @@
 services:
   server:
-    build:
-      context: .
+    image: urlshort:dev
+    #build:
+      #context: .
+    env_file:
+       - .env
     volumes:
        - db_data_sqlite:/var/lib/kutt
        - custom:/kutt/custom
