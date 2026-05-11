@@ -14,3 +14,13 @@ docs/api/static
 **/.DS_Store
 db/*
 !db/.gitkeep
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+!example.tfvars
+crash.log

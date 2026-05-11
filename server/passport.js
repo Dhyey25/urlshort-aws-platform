@@ -34,7 +34,7 @@ if (!env.DISALLOW_LOGIN_FORM) {
   const localOptions = {
     usernameField: "email"
   };
-  
+
   passport.use(
     new LocalStrategy(localOptions, async (email, password, done) => {
       try {
@@ -93,7 +93,7 @@ if (env.OIDC_ENABLED) {
       redirect_uris: [utils.getSiteURL() + "/login/oidc"],
       response_types: ["code"]
     });
-  
+
     passport.use(
       "oidc",
       new OIDCStrategy(
@@ -109,10 +109,10 @@ if (env.OIDC_ENABLED) {
           try {
             const email = userinfo[env.OIDC_EMAIL_CLAIM];
             const existingUser = await query.user.find({ email });
-  
+
             // Existing user.
             if (existingUser) return done(null, existingUser);
-  
+
             // New user.
             // Generate a random password which is not supposed to be used directly.
             const salt = await bcrypt.genSalt(12);
@@ -127,7 +127,7 @@ if (env.OIDC_ENABLED) {
               verification_expires: null,
             });
             return done(null, updatedUser);
-  
+
           } catch (err) {
             return done(err);
           }

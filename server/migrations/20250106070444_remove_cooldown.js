@@ -27,4 +27,3 @@ module.exports = {
   up,
   down
 };
-

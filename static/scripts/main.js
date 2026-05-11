@@ -98,7 +98,7 @@ function handleQRCode(element, id) {
     colorDark : "#000000",
     colorLight : "#ffffff",
     correctLevel : QRCode.CorrectLevel.H
-  });   
+  });
 }
 
 // copy the link to clipboard

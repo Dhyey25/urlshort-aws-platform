@@ -20,4 +20,3 @@ module.exports = {
   up,
   down
 }
-

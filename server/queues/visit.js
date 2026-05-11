@@ -22,9 +22,9 @@ function filterInOs(agent) {
 
 module.exports = function({ data }) {
   const tasks = [];
-  
+
   tasks.push(query.link.incrementVisit({ id:  data.link.id }));
-  
+
   // the following line is for backward compatibility
   // used to send the whole header to get the user agent
   const userAgent = data.userAgent || data.headers?.["user-agent"];
@@ -33,7 +33,7 @@ module.exports = function({ data }) {
   const [os = "Other"] = osList.filter(filterInOs(agent));
   const referrer =
   data.referrer && removeWww(URL.parse(data.referrer).hostname);
-  
+
   const country = data.country || geoip.lookup(data.ip)?.country;
 
   tasks.push(
