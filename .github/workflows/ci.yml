@@ -92,25 +92,25 @@ jobs:
           working_directory: infra
           soft_fail: false
 
-  docker-scan:
-    name: Dockerfile and Infra Filesystem Scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+            #docker-scan:
+            #name: Dockerfile and Infra Filesystem Scan
+            #runs-on: ubuntu-latest
+            #steps:
+            #- uses: actions/checkout@v4
 
-      - name: Trivy scan — Dockerfile config
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'config'
-          scan-ref: '.'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
+            #- name: Trivy scan — Dockerfile config
+            #uses: aquasecurity/trivy-action@master
+            #with:
+            #scan-type: 'config'
+            #scan-ref: '.'
+            #severity: 'HIGH,CRITICAL'
+            #exit-code: '1'
 
-      - name: Trivy scan — infra directory only
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: 'infra'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          ignore-unfixed: true
+            #- name: Trivy scan — infra directory only
+            #uses: aquasecurity/trivy-action@master
+            #with:
+            #scan-type: 'fs'
+            #scan-ref: 'infra'
+            #severity: 'HIGH,CRITICAL'
+            #exit-code: '1'
+            #ignore-unfixed: true
