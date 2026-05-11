@@ -265,6 +265,8 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
+# trivy:ignore:AVD-AWS-0054 -- HTTPS requires ACM cert and custom domain.
+# HTTP used for portfolio staging; production would use HTTPS with ACM.
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
   port              = 80
