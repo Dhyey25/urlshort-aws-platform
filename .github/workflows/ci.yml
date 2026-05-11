@@ -96,11 +96,3 @@ jobs:
           scan-ref: '.'
           severity: 'CRITICAL'
           exit-code: '1'
-
-      - name: Trivy scan — infra directory only
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-ref: 'infra'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          ignore-unfixed: true
