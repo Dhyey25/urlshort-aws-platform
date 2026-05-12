@@ -1,0 +1,5 @@
+# ALB uses HTTP — no domain/ACM cert for portfolio staging
+AVD-AWS-0054
+
+# Egress to 0.0.0.0/0 required for ALB health checks and ECS image pulls/secrets
+AVD-AWS-0104
