@@ -42,8 +42,10 @@ MIG_TASK_DEF=$(echo "$TASK_DEF" | jq \
       )
   ')
 
-MIG_TD_ARN=$(echo "$MIG_TASK_DEF" | aws ecs register-task-definition \
-  --cli-input-json file:///dev/stdin \
+
+echo "$MIG_TASK_DEF" > /tmp/migration-task-def.json
+MIG_TD_ARN=$(aws ecs register-task-definition \
+  --cli-input-json file:///tmp/migration-task-def.json \
   --query 'taskDefinition.taskDefinitionArn' \
   --output text)
 

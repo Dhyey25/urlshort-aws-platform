@@ -20,8 +20,9 @@ NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "$IMAGE_URI" \
    | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
 
 # Register new revision
-NEW_TD_ARN=$(echo "$NEW_TASK_DEF" | aws ecs register-task-definition \
-  --cli-input-json file:///dev/stdin \
+echo "$NEW_TASK_DEF" > /tmp/new-task-def.json
+NEW_TD_ARN=$(aws ecs register-task-definition \
+  --cli-input-json file:///tmp/new-task-def.json \
   --query 'taskDefinition.taskDefinitionArn' \
   --output text)
 
