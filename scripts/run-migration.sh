@@ -29,9 +29,17 @@ MIG_TASK_DEF=$(echo "$TASK_DEF" | jq \
   '
     .containerDefinitions[0].image = $IMAGE
     | .containerDefinitions[0].command = ["npm", "run", "migrate"]
-    | .containerDefinitions[0].healthCheck = null
+    | del(.containerDefinitions[0].healthCheck)
     | .family = $FAMILY
-    | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)
+    | del(
+        .taskDefinitionArn,
+        .revision,
+        .status,
+        .requiresAttributes,
+        .compatibilities,
+        .registeredAt,
+        .registeredBy
+      )
   ')
 
 MIG_TD_ARN=$(echo "$MIG_TASK_DEF" | aws ecs register-task-definition \
