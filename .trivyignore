@@ -3,3 +3,6 @@ AVD-AWS-0054
 
 # Egress to 0.0.0.0/0 required for ALB health checks and ECS image pulls/secrets
 AVD-AWS-0104
+
+# Upstream Kutt dependency — patch breaks app, tracked for upstream fix
+CVE-2026-33937
