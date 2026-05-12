@@ -100,7 +100,7 @@ jobs:
         run: terraform plan -no-color
         # Image tag changes are ignored on the service, so plan
         # should be empty unless someone changed the infrastructure.
-
+        # Deploy Staging
   deploy-staging:
     name: Deploy to staging
     runs-on: ubuntu-latest
