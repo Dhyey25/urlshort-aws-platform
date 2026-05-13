@@ -1,0 +1,15 @@
+Load test — 2026-05-13
+Target: staging ALB
+Tool: k6, 10 VUs sustained over 2m
+
+p50:  45ms
+p90:  68ms
+p95:  99ms
+p99:  ~180ms (estimated)
+max:  302ms
+RPS:  29 req/s
+Errors: 0.02% (1/4389)
+
+Thresholds:
+  p(95)<300ms ✓
+  error rate <1% ✓
