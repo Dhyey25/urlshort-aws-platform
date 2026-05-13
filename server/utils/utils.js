@@ -51,12 +51,12 @@ function setToken(res, token) {
   res.cookie("token", token, {
     maxAge: 1000 * 60 * 60 * 24 * 7, // expire after seven days
     httpOnly: true,
-    secure: env.isProd
+    secure: false
   });
 }
 
 function deleteCurrentToken(res) {
-  res.clearCookie("token", { httpOnly: true, secure: env.isProd });
+  res.clearCookie("token", { httpOnly: true, secure: false });
 }
 
 function generateRandomPassword() {
