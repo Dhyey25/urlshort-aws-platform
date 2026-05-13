@@ -1,432 +1,168 @@
-# terraform-docs
+# urlshort-aws-platform
 
-[![Build Status](https://github.com/terraform-docs/terraform-docs/workflows/ci/badge.svg)](https://github.com/terraform-docs/terraform-docs/actions) [![GoDoc](https://pkg.go.dev/badge/github.com/terraform-docs/terraform-docs)](https://pkg.go.dev/github.com/terraform-docs/terraform-docs) [![Go Report Card](https://goreportcard.com/badge/github.com/terraform-docs/terraform-docs)](https://goreportcard.com/report/github.com/terraform-docs/terraform-docs) [![Codecov Report](https://codecov.io/gh/terraform-docs/terraform-docs/branch/master/graph/badge.svg)](https://codecov.io/gh/terraform-docs/terraform-docs) [![License](https://img.shields.io/github/license/terraform-docs/terraform-docs)](https://github.com/terraform-docs/terraform-docs/blob/master/LICENSE) [![Latest release](https://img.shields.io/github/v/release/terraform-docs/terraform-docs)](https://github.com/terraform-docs/terraform-docs/releases)
+> **Portfolio project.** This repo is a fork of [Kutt](https://github.com/thedevs-network/kutt). The application code is upstream. The portfolio contribution lives in `infra/`, `.github/`, and `scripts/`. See [PORTFOLIO.md](./PORTFOLIO.md) for scope details.
 
-![terraform-docs-teaser](./images/terraform-docs-teaser.png)
+A production-style AWS platform for a containerized URL shortener — built to demonstrate DevOps engineering practices: infrastructure as code, container hardening, secrets management, keyless CI/CD, and database migration automation.
 
-## What is terraform-docs
+---
 
-A utility to generate documentation from Terraform modules in various output formats.
+## Architecture
 
-## Installation
+```
+Internet → ALB (public subnets, 2 AZs)
+             ↓
+        ECS Fargate (private subnets)
+             ↓              ↓
+        RDS Postgres    ElastiCache Redis
+             ↓
+        Secrets Manager (credentials injected at task start)
+             ↑
+        GitHub Actions (OIDC — no long-lived keys)
+```
 
-macOS users can install using [Homebrew]:
+- **Network**: VPC `10.0.0.0/16`, 2 AZs, public/private subnets, single NAT Gateway
+- **Compute**: ECS Fargate, ALB, immutable ECR image tags by commit SHA
+- **Data**: RDS Postgres 16 (`db.t4g.micro`), ElastiCache Redis 7 (`cache.t4g.micro`)
+- **Secrets**: AWS Secrets Manager, JSON-formatted, injected via ECS `valueFrom`
+- **CI/CD**: GitHub Actions + OIDC federation — no AWS access keys anywhere
+
+---
+
+## Repository structure
+
+```
+infra/
+├── bootstrap/        # S3 state bucket + DynamoDB lock table
+├── modules/
+│   ├── network/      # VPC, subnets, NAT, security groups
+│   ├── data/         # RDS, ElastiCache, Secrets Manager
+│   └── compute/      # ECR, ECS, ALB, IAM roles
+└── envs/
+    ├── staging/      # Staging environment (auto-deploy on merge)
+    ├── prod/         # Production environment (manual approval gate)
+    └── shared/       # GitHub OIDC provider + deploy role
+
+.github/workflows/
+├── ci.yml            # Lint, validate, tflint, Trivy — runs on every PR
+└── deploy.yml        # Build, scan, migrate, deploy — runs on merge to main
+
+scripts/
+├── deploy-ecs.sh     # Registers new task def revision, updates service
+└── run-migration.sh  # One-shot ECS migration task with exit-code gating
+
+loadtest/
+└── script.js         # k6 load test
+```
+
+---
+
+## CI/CD pipeline
+
+**CI (every PR):**
+- Node lint and test (`--if-present`)
+- `terraform fmt`, `terraform validate` across all modules
+- `tflint` with AWS ruleset
+- Trivy config scan (CRITICAL severity, blocks merge)
+
+**Deploy (merge to main → staging, manual approval → prod):**
+1. Build image, tag with commit SHA, push to ECR
+2. Trivy image scan — blocks on CRITICAL CVEs
+3. `terraform apply` (infrastructure changes)
+4. Run database migrations as one-shot ECS task — pipeline halts on non-zero exit
+5. Register new task definition revision with new image, update ECS service
+6. Wait for service stability
+7. HTTP smoke test against ALB
+
+---
+
+## Design decisions and trade-offs
+
+| Decision | Choice | Trade-off |
+|---|---|---|
+| NAT Gateway | Single (one AZ) | ~$33/mo vs ~$66 for HA; AZ-a outage breaks AZ-b egress |
+| Container base | `node:20-bookworm-slim` | ~80MB larger than Alpine; avoids musl libc edge cases |
+| Image tags | Immutable, SHA-based | Can't overwrite; rollback = point service at old revision |
+| Secrets | AWS Secrets Manager JSON | $0.40/secret/month; ECS injects individual fields via JMESPath |
+| OIDC auth | GitHub OIDC federation | No long-lived keys; trust policy scoped to repo + branch |
+| Migrations | One-shot ECS task before service update | Failed migration halts deploy; running service unaffected |
+| Deploy IAM | PowerUserAccess + scoped ECR/ECS/IAM policy | Production would use fully scoped policy (hours of enumeration) |
+| Cookies | `Secure` flag disabled in staging | HTTP-only deployment; production requires HTTPS + ACM cert |
+
+---
+
+## Load test results
+
+Tool: k6 — 10 VUs sustained over 2.5 minutes, 80% reads / 20% link creation.
+
+| Metric | Value |
+|---|---|
+| p50 latency | 45ms |
+| p95 latency | 99ms |
+| max latency | 302ms |
+| Throughput | 29 RPS |
+| Error rate | 0.02% (1/4389 requests) |
+
+Both thresholds passed (`p95 < 300ms`, `error rate < 1%`). Single ECS task (0.25 vCPU, 512MB) on `db.t4g.micro`. Next scaling levers: increase `desired_count`, upgrade instance class, add RDS read replica.
+
+---
+
+## What I'd change at scale
+
+- **Fully scoped IAM policy** for the deploy role instead of PowerUserAccess
+- **One NAT Gateway per AZ** for true HA egress
+- **HTTPS termination** at the ALB with ACM-managed certificate
+- **Customer-managed KMS keys** for Secrets Manager (currently AWS-managed)
+- **ECS service autoscaling** on CPU and request count
+- **WAF** in front of the ALB for basic abuse protection
+- **RDS read replica** once read traffic justifies the cost
+- **Centralized log aggregation** (Loki or OpenSearch) across environments
+
+---
+
+## Cost (staging, us-east-1)
+
+| Resource | Monthly |
+|---|---|
+| NAT Gateway | ~$33 |
+| RDS db.t4g.micro | ~$12 |
+| ElastiCache cache.t4g.micro | ~$11 |
+| ALB | ~$16 |
+| ECS Fargate (1 task) | ~$8 |
+| Secrets Manager (3 secrets) | ~$1.20 |
+| **Total** | **~$81/month** |
+
+Staging is destroyed when not in use. Infrastructure recreates from state in ~10 minutes via `terraform apply`.
+
+---
+
+## Key commands
 
 ```bash
-brew install terraform-docs
+# Recreate staging
+cd infra/envs/staging && terraform apply
+
+# Destroy staging
+cd infra/envs/staging && terraform destroy
+
+# Force ECS redeploy
+aws ecs update-service --cluster urlshort-staging-cluster \
+  --service urlshort-staging-svc --force-new-deployment
+
+# Tail logs
+aws logs tail /ecs/urlshort-staging/app --follow
+
+# Run load test
+k6 run --env BASE_URL=http://http://urlshort-staging-alb-2078532938.us-east-1.elb.amazonaws.com/ --env API_KEY=<key> loadtest/script.js
 ```
 
-or
+---
 
-```bash
-brew install terraform-docs/tap/terraform-docs
-```
+## Image size reduction
 
-Windows users can install using [Scoop]:
+| Image | Size |
+|---|---|
+| Upstream Kutt (naive) | ~1.1 GB |
+| This Dockerfile (multi-stage, slim base) | ~280 MB |
+| Reduction | **~75%** |
 
-```bash
-scoop bucket add terraform-docs https://github.com/terraform-docs/scoop-bucket
-scoop install terraform-docs
-```
-
-or [Chocolatey]:
-
-```bash
-choco install terraform-docs
-```
-
-Stable binaries are also available on the [releases] page. To install, download the
-binary for your platform from "Assets" and place this into your `$PATH`:
-
-```bash
-curl -Lo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.18.0/terraform-docs-v0.18.0-$(uname)-amd64.tar.gz
-tar -xzf terraform-docs.tar.gz
-chmod +x terraform-docs
-mv terraform-docs /usr/local/bin/terraform-docs
-```
-
-**NOTE:** Windows releases are in `ZIP` format.
-
-The latest version can be installed using `go install` or `go get`:
-
-```bash
-# go1.17+
-go install github.com/terraform-docs/terraform-docs@v0.18.0
-```
-
-```bash
-# go1.16
-GO111MODULE="on" go get github.com/terraform-docs/terraform-docs@v0.18.0
-```
-
-**NOTE:** please use the latest Go to do this, minimum `go1.16` is required.
-
-This will put `terraform-docs` in `$(go env GOPATH)/bin`. If you encounter the error
-`terraform-docs: command not found` after installation then you may need to either add
-that directory to your `$PATH` as shown [here] or do a manual installation by cloning
-the repo and run `make build` from the repository which will put `terraform-docs` in:
-
-```bash
-$(go env GOPATH)/src/github.com/terraform-docs/terraform-docs/bin/$(uname | tr '[:upper:]' '[:lower:]')-amd64/terraform-docs
-```
-
-## Usage
-
-### Running the binary directly
-
-To run and generate documentation into README within a directory:
-
-```bash
-terraform-docs markdown table --output-file README.md --output-mode inject /path/to/module
-```
-
-Check [`output`] configuration for more details and examples.
-
-### Using docker
-
-terraform-docs can be run as a container by mounting a directory with `.tf`
-files in it and run the following command:
-
-```bash
-docker run --rm --volume "$(pwd):/terraform-docs" -u $(id -u) quay.io/terraform-docs/terraform-docs:0.18.0 markdown /terraform-docs
-```
-
-If `output.file` is not enabled for this module, generated output can be redirected
-back to a file:
-
-```bash
-docker run --rm --volume "$(pwd):/terraform-docs" -u $(id -u) quay.io/terraform-docs/terraform-docs:0.18.0 markdown /terraform-docs > doc.md
-```
-
-**NOTE:** Docker tag `latest` refers to _latest_ stable released version and `edge`
-refers to HEAD of `master` at any given point in time.
-
-### Using GitHub Actions
-
-To use terraform-docs GitHub Action, configure a YAML workflow file (e.g.
-`.github/workflows/documentation.yml`) with the following:
-
-```yaml
-name: Generate terraform docs
-on:
-  - pull_request
-
-jobs:
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.ref }}
-
-    - name: Render terraform docs and push changes back to PR
-      uses: terraform-docs/gh-actions@main
-      with:
-        working-dir: .
-        output-file: README.md
-        output-method: inject
-        git-push: "true"
-```
-
-Read more about [terraform-docs GitHub Action] and its configuration and
-examples.
-
-### pre-commit hook
-
-With pre-commit, you can ensure your Terraform module documentation is kept
-up-to-date each time you make a commit.
-
-First [install pre-commit] and then create or update a `.pre-commit-config.yaml`
-in the root of your Git repo with at least the following content:
-
-```yaml
-repos:
-  - repo: https://github.com/terraform-docs/terraform-docs
-    rev: "v0.18.0"
-    hooks:
-      - id: terraform-docs-go
-        args: ["markdown", "table", "--output-file", "README.md", "./mymodule/path"]
-```
-
-Then run:
-
-```bash
-pre-commit install
-pre-commit install-hooks
-```
-
-Further changes to your module's `.tf` files will cause an update to documentation
-when you make a commit.
-
-## Configuration
-
-terraform-docs can be configured with a yaml file. The default name of this file is
-`.terraform-docs.yml` and the path order for locating it is:
-
-1. root of module directory
-1. `.config/` folder at root of module directory
-1. current directory
-1. `.config/` folder at current directory
-1. `$HOME/.tfdocs.d/`
-
-```yaml
-formatter: "" # this is required
-
-version: ""
-
-header-from: main.tf
-footer-from: ""
-
-recursive:
-  enabled: false
-  path: modules
-  include-main: true
-
-sections:
-  hide: []
-  show: []
-
-content: ""
-
-output:
-  file: ""
-  mode: inject
-  template: |-
-    <!-- BEGIN_TF_DOCS -->
-    {{ .Content }}
-    <!-- END_TF_DOCS -->
-
-output-values:
-  enabled: false
-  from: ""
-
-sort:
-  enabled: true
-  by: name
-
-settings:
-  anchor: true
-  color: true
-  default: true
-  description: false
-  escape: true
-  hide-empty: false
-  html: true
-  indent: 2
-  lockfile: true
-  read-comments: true
-  required: true
-  sensitive: true
-  type: true
-```
-
-## Content Template
-
-Generated content can be customized further away with `content` in configuration.
-If the `content` is empty the default order of sections is used.
-
-Compatible formatters for customized content are `asciidoc` and `markdown`. `content`
-will be ignored for other formatters.
-
-`content` is a Go template with following additional variables:
-
-- `{{ .Header }}`
-- `{{ .Footer }}`
-- `{{ .Inputs }}`
-- `{{ .Modules }}`
-- `{{ .Outputs }}`
-- `{{ .Providers }}`
-- `{{ .Requirements }}`
-- `{{ .Resources }}`
-
-and following functions:
-
-- `{{ include "relative/path/to/file" }}`
-
-These variables are the generated output of individual sections in the selected
-formatter. For example `{{ .Inputs }}` is Markdown Table representation of _inputs_
-when formatter is set to `markdown table`.
-
-Note that sections visibility (i.e. `sections.show` and `sections.hide`) takes
-precedence over the `content`.
-
-Additionally there's also one extra special variable avaialble to the `content`:
-
-- `{{ .Module }}`
-
-As opposed to the other variables mentioned above, which are generated sections
-based on a selected formatter, the `{{ .Module }}` variable is just a `struct`
-representing a [Terraform module].
-
-````yaml
-content: |-
-  Any arbitrary text can be placed anywhere in the content
-
-  {{ .Header }}
-
-  and even in between sections
-
-  {{ .Providers }}
-
-  and they don't even need to be in the default order
-
-  {{ .Outputs }}
-
-  include any relative files
-
-  {{ include "relative/path/to/file" }}
-
-  {{ .Inputs }}
-
-  # Examples
-
-  ```hcl
-  {{ include "examples/foo/main.tf" }}
-  ```
-
-  ## Resources
-
-  {{ range .Module.Resources }}
-  - {{ .GetMode }}.{{ .Spec }} ({{ .Position.Filename }}#{{ .Position.Line }})
-  {{- end }}
-````
-
-## Build on top of terraform-docs
-
-terraform-docs primary use-case is to be utilized as a standalone binary, but
-some parts of it is also available publicly and can be imported in your project
-as a library.
-
-```go
-import (
-    "github.com/terraform-docs/terraform-docs/format"
-    "github.com/terraform-docs/terraform-docs/print"
-    "github.com/terraform-docs/terraform-docs/terraform"
-)
-
-// buildTerraformDocs for module root `path` and provided content `tmpl`.
-func buildTerraformDocs(path string, tmpl string) (string, error) {
-    config := print.DefaultConfig()
-    config.ModuleRoot = path // module root path (can be relative or absolute)
-
-    module, err := terraform.LoadWithOptions(config)
-    if err != nil {
-        return "", err
-    }
-
-    // Generate in Markdown Table format
-    formatter := format.NewMarkdownTable(config)
-
-    if err := formatter.Generate(module); err != nil {
-        return "", err
-    }
-
-    // // Note: if you don't intend to provide additional template for the generated
-    // // content, or the target format doesn't provide templating (e.g. json, yaml,
-    // // xml, or toml) you can use `Content()` function instead of `Render()`.
-    // // `Content()` returns all the sections combined with predefined order.
-    // return formatter.Content(), nil
-
-    return formatter.Render(tmpl)
-}
-```
-
-## Plugin
-
-Generated output can be heavily customized with [`content`], but if using that
-is not enough for your use-case, you can write your own plugin.
-
-In order to install a plugin the following steps are needed:
-
-- download the plugin and place it in `~/.tfdocs.d/plugins` (or `./.tfdocs.d/plugins`)
-- make sure the plugin file name is `tfdocs-format-<NAME>`
-- modify [`formatter`] of `.terraform-docs.yml` file to be `<NAME>`
-
-**Important notes:**
-
-- if the plugin file name is different than the example above, terraform-docs won't
-be able to to pick it up nor register it properly
-- you can only use plugin thorough `.terraform-docs.yml` file and it cannot be used
-with CLI arguments
-
-To create a new plugin create a new repository called `tfdocs-format-<NAME>` with
-following `main.go`:
-
-```go
-package main
-
-import (
-    _ "embed" //nolint
-
-    "github.com/terraform-docs/terraform-docs/plugin"
-    "github.com/terraform-docs/terraform-docs/print"
-    "github.com/terraform-docs/terraform-docs/template"
-    "github.com/terraform-docs/terraform-docs/terraform"
-)
-
-func main() {
-    plugin.Serve(&plugin.ServeOpts{
-        Name:    "<NAME>",
-        Version: "0.1.0",
-        Printer: printerFunc,
-    })
-}
-
-//go:embed sections.tmpl
-var tplCustom []byte
-
-// printerFunc the function being executed by the plugin client.
-func printerFunc(config *print.Config, module *terraform.Module) (string, error) {
-    tpl := template.New(config,
-        &template.Item{Name: "custom", Text: string(tplCustom)},
-    )
-
-    rendered, err := tpl.Render("custom", module)
-    if err != nil {
-        return "", err
-    }
-
-    return rendered, nil
-}
-```
-
-Please refer to [tfdocs-format-template] for more details. You can create a new
-repository from it by clicking on `Use this template` button.
-
-## Documentation
-
-- **Users**
-  - Read the [User Guide] to learn how to use terraform-docs
-  - Read the [Formats Guide] to learn about different output formats of terraform-docs
-  - Refer to [Config File Reference] for all the available configuration options
-- **Developers**
-  - Read [Contributing Guide] before submitting a pull request
-
-Visit [our website] for all documentation.
-
-## Community
-
-- Discuss terraform-docs on [Slack]
-
-## License
-
-MIT License - Copyright (c) 2021 The terraform-docs Authors.
-
-[Chocolatey]: https://www.chocolatey.org
-[Config File Reference]: https://terraform-docs.io/user-guide/configuration/
-[`content`]: https://terraform-docs.io/user-guide/configuration/content/
-[Contributing Guide]: CONTRIBUTING.md
-[Formats Guide]: https://terraform-docs.io/reference/terraform-docs/
-[`formatter`]: https://terraform-docs.io/user-guide/configuration/formatter/
-[here]: https://golang.org/doc/code.html#GOPATH
-[Homebrew]: https://brew.sh
-[install pre-commit]: https://pre-commit.com/#install
-[`output`]: https://terraform-docs.io/user-guide/configuration/output/
-[releases]: https://github.com/terraform-docs/terraform-docs/releases
-[Scoop]: https://scoop.sh/
-[Slack]: https://slack.terraform-docs.io/
-[terraform-docs GitHub Action]: https://github.com/terraform-docs/gh-actions
-[Terraform module]: https://pkg.go.dev/github.com/terraform-docs/terraform-docs/terraform#Module
-[tfdocs-format-template]: https://github.com/terraform-docs/tfdocs-format-template
-[our website]: https://terraform-docs.io/
-[User Guide]: https://terraform-docs.io/user-guide/introduction/
+Multi-stage build, `node:20-bookworm-slim`, non-root user, `tini` for signal handling, `.dockerignore` excluding dev artifacts.
