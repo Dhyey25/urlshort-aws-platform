@@ -142,7 +142,7 @@ jobs:
 
       - name: Smoke test
         run: |
-          ALB_DNS=$(cd infra/envs/staging && terraform output -raw -module=compute alb_dns_name)
+          ALB_DNS=$(cd infra/envs/staging && terraform output -raw alb_dns_name)
           for i in {1..10}; do
             if curl -sf "http://$ALB_DNS/health"; then
               echo "Smoke test passed"
